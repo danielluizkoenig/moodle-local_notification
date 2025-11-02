@@ -123,8 +123,8 @@ class form_course extends \moodleform
         $mform->setDefault('content', ['text' => $content]);
 
         if (has_capability('moodle/site:config', \context_system::instance())) {
-            $urlConfig = new moodle_url('/local/notification/manage_queries.php');
-            $urlConfig = html_writer::link($urlConfig, get_string('n_manage', local_notification::PLUGINNAME));
+            $urlConfig = new \moodle_url('/local/notification/manage_queries.php');
+            $urlConfig = \html_writer::link($urlConfig, get_string('n_manage', local_notification::PLUGINNAME));
             $configHelp = '<div class="row"><div class="col-9 offset-3 pl-5">' . $urlConfig . '</div></div>';
             $mform->addElement('html', $configHelp);
         }

@@ -112,6 +112,8 @@ class notification_task extends scheduled_task
         if ($this->enable_popup) {
             // Create adhoc task
             $task = new \local_notification\task\send_popup_notification_task();
+            $dispatch = new local_notification();
+            $courseName = $dispatch->get_course_name($notification->course_id);
             
             $taskdata = new \stdClass();
             $taskdata->userfrom = $from;
@@ -119,7 +121,10 @@ class notification_task extends scheduled_task
             $taskdata->subject = html_to_text($msg->subject);
             $taskdata->fullmessage = html_to_text($msg->bodyhtml);
             $taskdata->fullmessagehtml = $msg->bodyhtml;
-            
+            $taskdata->contexturl = (new \moodle_url('/course/view.php', ['id' => $notification->course_id]))->out(false);
+            $taskdata->contexturlname = $courseName;
+            $taskdata->notification = 1;
+    
             $task->set_custom_data($taskdata);
             
             // Queue the task

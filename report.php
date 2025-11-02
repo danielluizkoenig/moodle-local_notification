@@ -9,7 +9,8 @@
 
 require_once('../../config.php');
 require_login();
-
+require_once($CFG->libdir . '/tablelib.php');
+use flexible_table;
 $context = context_system::instance();
 require_capability('local/notification:view', $context);
 
@@ -111,15 +112,32 @@ if (empty($course_ids)) {
         $params['notificationid'] = $notificationid;
     }
     
-    $sql .= " GROUP BY n.id, n.subject, n.status, n.course_id, c.fullname, nq.description ORDER BY c.fullname, n.subject";
+    $sql .= " GROUP BY n.id, n.subject, n.status, n.course_id, c.fullname, nq.description";
+    
+    // Ordenação padrão
+    $sort = optional_param('tsort', 'course', PARAM_ALPHA);
+    $dir = optional_param('tdir', 'ASC', PARAM_ALPHA);
+    
+    $order_map = [
+        'course' => 'c.fullname',
+        'subject' => 'n.subject', 
+        'type' => 'nq.description',
+        'status' => 'n.status',
+        'total_sent' => 'COUNT(nh.id)',
+        'last_sent' => 'MAX(nh.delivered)'
+    ];
+    
+    $order_field = isset($order_map[$sort]) ? $order_map[$sort] : 'c.fullname';
+    $sql .= " ORDER BY {$order_field} {$dir}";
     
     $records = $DB->get_records_sql($sql, $params);
 }
 
 // Tabela de resultados
 if (!empty($records)) {
-    $table = new html_table();
-    $table->head = array(
+    $table = new flexible_table('notification-report');
+    $table->define_columns(array('course', 'subject', 'type', 'status', 'total_sent', 'last_sent', 'details'));
+    $table->define_headers(array(
         get_string('course'),
         get_string('n_subject', 'local_notification'),
         get_string('n_type', 'local_notification'),
@@ -127,7 +145,12 @@ if (!empty($records)) {
         get_string('total_sent', 'local_notification'),
         get_string('last_sent', 'local_notification'),
         get_string('details', 'local_notification')
-    );
+    ));
+    
+    $table->sortable(true, 'course');
+    $table->no_sorting('details');
+    $table->define_baseurl($PAGE->url);
+    $table->setup();
     
     foreach ($records as $record) {
         $status = $record->status ? get_string('active') : get_string('inactive');
@@ -144,7 +167,7 @@ if (!empty($records)) {
             $record->course_name
         );
         
-        $table->data[] = array(
+        $table->add_data(array(
             $course_link,
             $record->subject,
             $record->notification_type ?: '-',
@@ -152,10 +175,10 @@ if (!empty($records)) {
             $record->total_sent,
             $last_sent,
             $details_link
-        );
+        ));
     }
     
-    echo html_writer::table($table);
+    $table->finish_output();
 } else {
     echo $OUTPUT->notification(get_string('no_data', 'local_notification'), 'info');
 }

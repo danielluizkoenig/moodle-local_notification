@@ -18,6 +18,8 @@ class send_popup_notification_task extends \core\task\adhoc_task {
         $eventdata->fullmessagehtml  = $data->fullmessagehtml;
         $eventdata->smallmessage     = $data->subject;
         $eventdata->notification     = 1;
+        $eventdata->contexturlname = $data->contexturlname;
+        $eventdata->contexturl = $data->contexturl;
 
         message_send($eventdata);
     }

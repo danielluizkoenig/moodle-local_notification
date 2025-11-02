@@ -18,8 +18,10 @@ $dateto = $dateto_str ? strtotime($dateto_str) : 0;
 $accessed = optional_param('accessed', '', PARAM_ALPHA);
 $sort = optional_param('sort', 'delivered', PARAM_ALPHA);
 $dir = optional_param('dir', 'desc', PARAM_ALPHA);
+$page = optional_param('page', 0, PARAM_INT);
+$perpage = 100;
 
-$PAGE->set_url('/local/notification/report_details.php', array('id' => $notificationid, 'datefrom' => $datefrom_str, 'dateto' => $dateto_str, 'accessed' => $accessed, 'sort' => $sort, 'dir' => $dir));
+$PAGE->set_url('/local/notification/report_details.php', array('id' => $notificationid, 'datefrom' => $datefrom_str, 'dateto' => $dateto_str, 'accessed' => $accessed, 'sort' => $sort, 'dir' => $dir, 'page' => $page));
 $PAGE->set_title(get_string('report_details_title', 'local_notification'));
 $PAGE->set_heading(get_string('report_details_title', 'local_notification'));
 
@@ -114,6 +116,10 @@ if ($accessed === 'yes') {
     $sql .= " AND nh.timeaccess IS NULL";
 }
 
+// Contar total de registros
+$count_sql = str_replace('SELECT nh.user_id, nh.delivered, nh.timeaccess, u.firstname, u.lastname, u.email', 'SELECT COUNT(*)', $sql);
+$total_count = $DB->count_records_sql($count_sql, $params);
+
 // Ordenação
 if ($sort === 'daysdiff') {
     $sql .= " ORDER BY (nh.timeaccess - nh.delivered) " . (($dir === 'asc') ? 'ASC' : 'DESC');
@@ -122,7 +128,10 @@ if ($sort === 'daysdiff') {
     $order_dir = ($dir === 'asc') ? 'ASC' : 'DESC';
     $sql .= " ORDER BY $order_field $order_dir";
 }
-$records = $DB->get_records_sql($sql, $params);
+
+
+// Buscar registros com paginação
+$records = $DB->get_records_sql($sql, $params, $page * $perpage, $perpage);
 
 // Botões de exportação
 if (!empty($records)) {
@@ -212,6 +221,18 @@ if (!empty($records)) {
     }
     
     echo html_writer::table($table);
+    
+    // Paginação
+    $baseurl = new moodle_url('/local/notification/report_details.php', array(
+        'id' => $notificationid,
+        'datefrom' => $datefrom_str,
+        'dateto' => $dateto_str,
+        'accessed' => $accessed,
+        'sort' => $sort,
+        'dir' => $dir
+    ));
+    
+    echo $OUTPUT->paging_bar($total_count, $page, $perpage, $baseurl);
 } else {
     echo $OUTPUT->notification(get_string('no_students_found', 'local_notification'), 'info');
 }

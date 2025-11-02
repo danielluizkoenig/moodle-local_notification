@@ -23,7 +23,7 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version  = 2025102908;
+$plugin->version  = 2025102909;
 $plugin->requires = 2019111809.00;
 $plugin->release   = "2.0";
 $plugin->component = 'local_notification';

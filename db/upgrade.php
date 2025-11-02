@@ -34,5 +34,19 @@ defined('MOODLE_INTERNAL') || die();
  * @return true
  */
 function xmldb_local_notification_upgrade($oldversion) {
+    global $DB;
+    $dbman = $DB->get_manager();
+    
+    if ($oldversion < 2025102909) {
+        $table = new xmldb_table('notification');
+        $field = new xmldb_field('days_after', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        
+        upgrade_plugin_savepoint(true, 2025102909, 'local', 'notification');
+    }
+    
     return true;
 }
